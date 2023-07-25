@@ -2,6 +2,11 @@ import os
 import cv2
 import numpy as np
 from torch.utils.data import Dataset
+from PIL import Image
+
+def to_categorical(y, num_classes):
+    """ 1-hot encodes a tensor """
+    return np.eye(num_classes, dtype='uint8')[y]
 
 class DigitDataset(Dataset):
     def __init__(self, path):
@@ -23,7 +28,7 @@ class DigitDataset(Dataset):
             for filename in filenames:
                 filePath = os.path.join(subPath, filename)
                 self.x.append(filePath)
-                self.y.append(category)
+                self.y.append(int(category))
 
     def __getitem__(self, index):
         filePath = self.x[index]
@@ -32,15 +37,17 @@ class DigitDataset(Dataset):
         # 獲取檔案路徑，使用cv2讀取影像
         image = cv2.imread(filePath)
         # 使用numpy把cv2的image轉換為陣列
-        image_array = np.array(image)
+        image_array = np.array(image, dtype=np.float32)
         img = image_array[:, :, 0]
-        return img, tag
+
+        tag = to_categorical(tag, 10)
+        return img, tag # X, Y
 
     def __len__(self):
         return len(self.x)
 
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     trainingSet = DigitDataset(r'./data/MNIST - JPG - training')
-#     testingSet = DigitDataset(r'./data/MNIST - JPG - testing')
+    encoded = to_categorical(2, 10)
+    print(encoded)
