@@ -67,7 +67,7 @@ for epoch in range(EPOCH):
         # 將資料讀入至cpu或gpu
         data, target = data.to('cuda'), target.to('cuda')
         pred = model(data)
-        loss = loss_function(pred, target)
+        loss = loss_function(pred, target.double())
         val_loss += loss.item()
         val_step += 1
 
