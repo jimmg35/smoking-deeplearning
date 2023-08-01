@@ -26,8 +26,7 @@ class MLP(nn.Module):
             nn.ReLU(),
             nn.Linear(1024, 1024),
             nn.ReLU(),
-            nn.Linear(1024, 10),
-            nn.Softmax()
+            nn.Linear(1024, 10)
         )
 
     def forward(self, x):
