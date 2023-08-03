@@ -43,7 +43,10 @@ test_dataloader = DataLoader(
 
 
 epochs = []
-losses = []
+train_losses = []
+val_losses = []
+train_accs = []
+val_accs = []
 # 開始訓練
 for epoch in range(EPOCH):
 
@@ -51,6 +54,11 @@ for epoch in range(EPOCH):
     train_step = 0
     val_loss = 0.0
     val_step = 0
+
+    correct_train = 0
+    total_train = 0
+    correct_val = 0
+    total_val = 0
 
     for data, target in train_dataloader:
         # 將資料讀入至cpu或gpu
@@ -62,35 +70,50 @@ for epoch in range(EPOCH):
         # 計算殘差(loss)
         loss = loss_function(pred, target.double())
 
-        print(pred)
-        print(target.double())
-        print("======")
+        # Calculate training accuracy
+        _, predicted = torch.max(pred.data, 1)
+        total_train += target.size(0)
+        correct_train += (predicted == target).sum().item()
 
         # 反向傳播(更新模型參數)
         loss.backward()
         optimizer.step()
         train_loss += loss.item()
         train_step += 1
-        print(f"epoch : {epoch+1} | step : {train_step} | loss : {loss.item()}")
+        # print(f"epoch : {epoch+1} | step : {train_step} | loss : {loss.item()}")
 
     for data, target in test_dataloader:
         # 將資料讀入至cpu或gpu
         data, target = data.to('cuda'), target.to('cuda')
         pred = model(data)
         loss = loss_function(pred, target.double())
+
+        # Calculate validation accuracy
+        _, predicted = torch.max(pred.data, 1)
+        total_val += target.size(0)
+        correct_val += (predicted == target).sum().item()
+
         val_loss += loss.item()
         val_step += 1
 
-        print(f"-epoch : {epoch+1} | step : {val_step} | loss : {loss.item()}")
+        # print(f"-epoch : {epoch+1} | step : {val_step} | loss : {loss.item()}")
     
     mean_train_loss = train_loss / train_step
     mean_val_loss = val_loss / val_step
 
-    print(f"=epoch : {epoch+1} | training loss : {mean_train_loss} | validation loss : {mean_val_loss}")
+    # Calculate overall accuracy
+    train_accuracy = 100 * correct_train / total_train
+    val_accuracy = 100 * correct_val / total_val
+
+
+    print(f"epoch : {epoch+1} | train loss : {mean_train_loss} | train acc: {train_accuracy} | val loss : {mean_val_loss} | val acc: {val_accuracy}")
 
     
     epochs.append(epoch)
-    losses.append(mean_train_loss)
+    train_losses.append(mean_train_loss)
+    val_losses.append(mean_val_loss)
+    train_accs.append(train_accuracy)
+    val_accs.append(val_accuracy)
 
 
 
@@ -108,10 +131,46 @@ for epoch in range(EPOCH):
     .add_xaxis(xaxis_data=epochs)
     .add_yaxis(
         series_name="",
-        y_axis=losses,
+        y_axis=train_losses,
         symbol="emptyCircle",
         is_symbol_show=True,
         label_opts=opts.LabelOpts(is_show=False),
     )
-    .render("basic_line_chart.html")
+    .add_yaxis(
+        series_name="",
+        y_axis=val_losses,
+        symbol="emptyCircle",
+        is_symbol_show=True,
+        label_opts=opts.LabelOpts(is_show=False),
+    )
+    .render("loss.html")
+)
+
+(
+    Line()
+    .set_global_opts(
+        tooltip_opts=opts.TooltipOpts(is_show=False),
+        xaxis_opts=opts.AxisOpts(type_="category"),
+        yaxis_opts=opts.AxisOpts(
+            type_="value",
+            axistick_opts=opts.AxisTickOpts(is_show=True),
+            splitline_opts=opts.SplitLineOpts(is_show=True),
+        ),
+    )
+    .add_xaxis(xaxis_data=epochs)
+    .add_yaxis(
+        series_name="",
+        y_axis=train_accs,
+        symbol="emptyCircle",
+        is_symbol_show=True,
+        label_opts=opts.LabelOpts(is_show=False),
+    )
+    .add_yaxis(
+        series_name="",
+        y_axis=val_accs,
+        symbol="emptyCircle",
+        is_symbol_show=True,
+        label_opts=opts.LabelOpts(is_show=False),
+    )
+    .render("accuracy.html")
 )
